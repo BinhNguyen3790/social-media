@@ -1,11 +1,11 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 
-// const serviceAccount = require("./sociallappp-firebase-adminsdk-ojwss-91c63dcd88.json");
+const serviceAccount = require("./sociallappp-firebase-adminsdk-ojwss-91c63dcd88.json");
 
 admin.initializeApp({
-  // credential: admin.credential.cert(serviceAccount),
-  // databaseURL: "https://sociallappp.firebaseio.com"
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://sociallappp.firebaseio.com"
 });
 
 const express = require('express');
@@ -20,6 +20,7 @@ app.get('/screams', (req, res) => {
   admin
     .firestore()
     .collection('screams')
+    .orderBy('createAt', 'desc')
     .get()
     .then((data) => {
       let screams = [];
@@ -27,6 +28,8 @@ app.get('/screams', (req, res) => {
         screams.push({
           screamId: doc.id,
           body: doc.data().body,
+          userHandle: doc.data().userHandle,
+          createdAt: doc.data().createAt
         });
       });
       return res.json(screams);
@@ -38,7 +41,7 @@ app.post('/scream', (req, res) => {
   const newScream = {
     body: req.body.body,
     userHandle: req.body.userHandle,
-    createdAt: admin.firestore.Timestamp.fromDate(new Date())
+    createdAt: new Date().toISOString()
   };
 
   admin
@@ -54,4 +57,6 @@ app.post('/scream', (req, res) => {
     })
 });
 
-exports.api = functions.https.onRequest(app);
+exports.api = functions.region('asia-east2').https.onRequest(app);
+
+
