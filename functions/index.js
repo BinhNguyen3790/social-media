@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const app = require('express')();
 
 const serviceAccount = require("./sociallappp-firebase-adminsdk-ojwss-91c63dcd88.json");
 
@@ -8,8 +9,21 @@ admin.initializeApp({
   databaseURL: "https://sociallappp.firebaseio.com"
 });
 
-const express = require('express');
-const app = express();
+const firebaseConfig = {
+  apiKey: "AIzaSyCZfymvaBx0tjNZv83VsPYMNzcZMF6owEg",
+  authDomain: "sociallappp.firebaseapp.com",
+  databaseURL: "https://sociallappp.firebaseio.com",
+  projectId: "sociallappp",
+  storageBucket: "sociallappp.appspot.com",
+  messagingSenderId: "323111202808",
+  appId: "1:323111202808:web:d9df120698010a721fb00d",
+  measurementId: "G-LNJ1DGK5G3"
+};
+
+const firebase = require('firebase');
+firebase.initializeApp(firebaseConfig);
+
+const db = admin.firestore();
 
 // // Create and Deploy Your First Cloud Functions
 // // https://firebase.google.com/docs/functions/write-firebase-functions
@@ -17,8 +31,7 @@ const app = express();
 
 
 app.get('/screams', (req, res) => {
-  admin
-    .firestore()
+  db
     .collection('screams')
     .orderBy('createAt', 'desc')
     .get()
@@ -44,8 +57,7 @@ app.post('/scream', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  admin
-    .firestore()
+  db
     .collection('screams')
     .add(newScream)
     .then(doc => {
@@ -56,6 +68,43 @@ app.post('/scream', (req, res) => {
       console.error(err);
     })
 });
+
+// SignUp route
+app.post('/signup', (req, res) => {
+  const newUser = {
+    email: req.body.email,
+    password: req.body.password,
+    confirmPassword: req.body.confirmPassword,
+    handle: req.body.handle
+  };
+
+  // TODO validate data
+  db.doc(`/users/${newUser.handle}`).get()
+  .then(doc => {
+    if(doc.exists) {
+      return res.status(400).json({handle: `this handle is already taken`});
+    } else {
+      return firebase
+      .auth()
+      .createUserWithEmailAndPassword(newUser.email, newUser.password);
+    }
+  })
+  .then(data => {
+    return data.user.getIdToken() 
+  })
+  .then(token => {
+    return res.status(201).json({token});
+  })
+
+  // firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
+  // .then(data => {
+  //   return res.status(201).json({message: `user ${data.user.uid} signed up successfully`});
+  // }) 
+  .catch((err) => {
+    console.error(err);
+    return res.status(500).json({error: err.code});
+  })
+})
 
 exports.api = functions.region('asia-east2').https.onRequest(app);
 
