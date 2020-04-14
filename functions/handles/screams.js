@@ -149,7 +149,7 @@ exports.likeScream = (req, res) => {
 }
 
 exports.unlikeScream = (req, res) => {
-  const likeDocument = db.collection('like').where('userHandle', '==', req.user.handle)
+  const likeDocument = db.collection('likes').where('userHandle', '==', req.user.handle)
     .where('screamId', '==', req.params.screamId).limit(1);
   const screamDocument = db.doc(`/screams/${req.params.screamId}`);
   let screamData;

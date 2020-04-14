@@ -11,7 +11,7 @@ exports.signUp = (req, res) => {
   const newUser = {
     email: req.body.email,
     password: req.body.password,
-    confirmPassword: req.body.confirmPassword,                                                                
+    confirmPassword: req.body.confirmPassword,
     handle: req.body.handle
   };
 
@@ -98,37 +98,88 @@ exports.login = (req, res) => {
 exports.addUserDetails = (req, res) => {
   let userDetails = reduceUserDetails(req.body);
   db.doc(`/users/${req.user.handle}`)
-  .update(userDetails)
-  .then(() => {
-    return res.json({message: 'Details added successfully'});
-  })
-  .catch((err) => {
-    console.error(err);
-    return res.status(500).json({error: err.code});
-  })
+    .update(userDetails)
+    .then(() => {
+      return res.json({ message: 'Details added successfully' });
+    })
+    .catch((err) => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    })
+}
+
+// Get any user's details
+exports.getUserDetails = (req, res) => {
+  let userData = {};
+  db.doc(`/users/${req.params.handle}`).get()
+    .then(doc => {
+      if (doc.exists) {
+        userData.user = doc.data();
+        return db.collection('screams').where('userHandle', '==', req.params.handle)
+          .orderBy('createAt', 'desc')
+          .get();
+      } else {
+        return res.status(404).json({ error: 'User not found' });
+      }
+    })
+    .then(data => {
+      userData.screams = [];
+      data.forEach(doc => {
+        userData.screams.push({
+          body: doc.data().body,
+          createAt: doc.data().createAt,
+          userHandle: doc.data().userHandle,
+          userImage: doc.data().userImage,
+          likeCount: doc.data().likeCount,
+          commentCount: doc.data().commentCount,
+          screamId: doc.id
+        })
+      })
+      return res.json(userData);
+    })
+    .catch(err => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    })
 }
 
 // Get own user details
 exports.getAuthenticatedUser = (req, res) => {
   let userData = {};
   db.doc(`/users/${req.user.handle}`).get()
-  .then(doc => {
-    if(doc.exists) {
-      userData.credentials = doc.data();
-      return db.collection('likes').where('userHandle', '==', req.user.handle).get()
-    }
-  })
-  .then(data => {
-    userData.likes = [];
-    data.forEach(doc => {
-      userData.likes.push(doc.data())
+    .then(doc => {
+      if (doc.exists) {
+        userData.credentials = doc.data();
+        return db.collection('likes').where('userHandle', '==', req.user.handle).get()
+      }
     })
-    return res.json(userData)
-  })
-  .catch(err => {
-    console.error(err);
-    return res.status(500).json({error: err.code});
-  })
+    .then(data => {
+      userData.likes = [];
+      data.forEach(doc => {
+        userData.likes.push(doc.data())
+      })
+      return db.collection('notifications').where('recipient', '==', req.user.handle)
+        .orderBy('createAt', 'desc').limit(10).get();
+    })
+    .then(data => {
+      userData.notifications = [];
+      data.forEach(doc => {
+        userData.notifications.push({
+          recipient: doc.data().recipient,
+          sender: doc.data().sender,
+          read: doc.data().read,
+          screamId: doc.data().screamId,
+          type: doc.data().type,
+          createAt: doc.data().createAt,
+          notificationId: doc.id
+        })
+      })
+      return res.json(userData);
+    })
+    .catch(err => {
+      console.error(err);
+      return res.status(500).json({ error: err.code });
+    })
 }
 
 // Upload a profile image for user
@@ -145,8 +196,8 @@ exports.uploadImage = (req, res) => {
 
   busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
 
-    if(mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
-      return res.status(400).json({error: 'Wrong file type submitted'});
+    if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
+      return res.status(400).json({ error: 'Wrong file type submitted' });
     }
 
     // my.image.png
@@ -179,4 +230,21 @@ exports.uploadImage = (req, res) => {
       })
   })
   busboy.end(req.rawBody);
+}
+
+// Mark notifications
+exports.markNotificationsRead = (req, res) => {
+  let batch = db.batch();
+  req.body.forEach((notificationId) => {
+    const notification = db.doc(`/notifications/${notificationId}`);
+    batch.update(notification, {read: true});
+  });
+  batch.commit()
+  .then(() => {
+    return res.json({message: 'Notification mark read'})
+  })
+  .catch(err => {
+    console.error(err);
+    return res.status(500).json({error: err.code})
+  })
 }
