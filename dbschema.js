@@ -19,6 +19,24 @@ let db = {
       likeCount: 5,
       commentCount: 3
     }
+  ],
+  comments: [
+    {
+      userHandle: 'user',
+      screamId: 'ldasd93n3fn3',
+      body: 'nice one mate',
+      createAt: '2020-03-19T03:58:25.904Z'
+    }
+  ],
+  notifications: [
+    {
+      recipient: 'user',
+      sender: 'john',
+      read: 'true | false',
+      screamId: 'sa9af0383b8',
+      type: 'like | comment',
+      createAt: '2020-03-19T03:58:25.904Z'
+    }
   ]
 }
 
