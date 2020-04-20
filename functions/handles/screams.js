@@ -3,7 +3,7 @@ const { db } = require('../until/admin');
 exports.getAllScreams = (req, res) => {
   db
     .collection('screams')
-    .orderBy('createAt', 'desc')
+    .orderBy('createdAt', 'desc')
     .get()
     .then((data) => {
       let screams = [];
@@ -12,7 +12,7 @@ exports.getAllScreams = (req, res) => {
           screamId: doc.id,
           body: doc.data().body,
           userHandle: doc.data().userHandle,
-          createdAt: doc.data().createAt,
+          createdAt: doc.data().createdAt,
           commentCount: doc.data().commentCount,
           likeCount: doc.data().likeCount,
           userImage: doc.data().userImage
@@ -66,7 +66,7 @@ exports.getScream = (req, res) => {
       }
       screamData = doc.data();
       screamData.screamId = doc.id;
-      return db.collection('comments').orderBy('createAt', 'desc').where('screamId', '==', req.params.screamId).get();
+      return db.collection('comments').orderBy('createdAt', 'desc').where('screamId', '==', req.params.screamId).get();
     })
     .then((data) => {
       screamData.comments = [];
@@ -86,7 +86,7 @@ exports.commentOnScream = (req, res) => {
   if (req.body.body.trim() === '') return res.status(400).json({ error: 'comment not be empty' });
   const newComment = {
     body: req.body.body,
-    createAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     screamId: req.params.screamId,
     userHandle: req.user.handle,
     userImage: req.user.imageUrl

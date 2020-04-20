@@ -43,7 +43,7 @@ exports.signUp = (req, res) => {
       const userCredentials = {
         handle: newUser.handle,
         email: newUser.email,
-        createAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         imageUrl: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${noImg}?alt=media`,
         userId
       };
@@ -110,7 +110,7 @@ exports.getUserDetails = (req, res) => {
       if (doc.exists) {
         userData.user = doc.data();
         return db.collection('screams').where('userHandle', '==', req.params.handle)
-          .orderBy('createAt', 'desc')
+          .orderBy('createdAt', 'desc')
           .get();
       } else {
         return res.status(404).json({ error: 'User not found' });
@@ -121,7 +121,7 @@ exports.getUserDetails = (req, res) => {
       data.forEach(doc => {
         userData.screams.push({
           body: doc.data().body,
-          createAt: doc.data().createAt,
+          createdAt: doc.data().createdAt,
           userHandle: doc.data().userHandle,
           userImage: doc.data().userImage,
           likeCount: doc.data().likeCount,
@@ -153,7 +153,7 @@ exports.getAuthenticatedUser = (req, res) => {
         userData.likes.push(doc.data())
       })
       return db.collection('notifications').where('recipient', '==', req.user.handle)
-        .orderBy('createAt', 'desc').limit(10).get();
+        .orderBy('createdAt', 'desc').limit(10).get();
     })
     .then(data => {
       userData.notifications = [];
@@ -164,7 +164,7 @@ exports.getAuthenticatedUser = (req, res) => {
           read: doc.data().read,
           screamId: doc.data().screamId,
           type: doc.data().type,
-          createAt: doc.data().createAt,
+          createdAt: doc.data().createdAt,
           notificationId: doc.id
         })
       })
