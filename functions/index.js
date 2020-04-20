@@ -31,7 +31,7 @@ exports.createNotificationOnLike = functions.region('asia-east2').firestore.docu
       .then(doc => {
         if (doc.exists && doc.data().userHandle !== snapshot.data().userHandle) {
           return db.doc(`/notifications/${snapshot.id}`).set({
-            createAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
             recipient: doc.data().userHandle,
             sender: snapshot.data().userHandle,
             type: 'like',
@@ -59,7 +59,7 @@ exports.createNotificationOnComment = functions.region('asia-east2').firestore.d
       .then(doc => {
         if (doc.exists && doc.data().userHandle !== snapshot.data().userHandle) {
           return db.doc(`/notifications/${snapshot.id}`).set({
-            createAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
             recipient: doc.data().userHandle,
             sender: snapshot.data().userHandle,
             type: 'comment',
