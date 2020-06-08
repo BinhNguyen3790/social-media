@@ -1,6 +1,10 @@
 const functions = require('firebase-functions');
 const app = require('express')();
 const fbAuth = require('./until/fbAuth');
+
+const cors = require('cors');
+app.use(cors());
+
 const { db } = require('./until/admin');
 const { getAllScreams, postOneScream, getScream, commentOnScream, likeScream, unlikeScream, deleteScream } = require('./handles/screams');
 const { signUp, login, uploadImage, addUserDetails, getAuthenticatedUser, getUserDetails, markNotificationsRead } = require('./handles/users');
@@ -79,7 +83,7 @@ exports.onUserImageChange = functions.region('asia-east2').firestore.document('/
     console.log(change.before.data());
     console.log(change.after.data());
     if (change.before.data().imageUrl !== change.after.data().imageUrl) {
-      console.log('image has changed'); 
+      console.log('image has changed');
       let batch = db.batch();
       return db.collection('screams').where('userHandle', '==', change.before.data().handle).get()
         .then((data) => {
@@ -93,27 +97,27 @@ exports.onUserImageChange = functions.region('asia-east2').firestore.document('/
   })
 
 exports.onScreamDelete = functions.region('asia-east2').firestore.document('/screams/{screamId}')
-.onDelete((snapshot, context) => {
-  const screamId = context.params.screamId;
-  const batch = db.batch();
-  return db.collection('comments').where('screamId', '=', screamId).get()
-  .then(data => {
-    data.forEach(doc => {
-      batch.delete(db.doc(`/comments/${doc.id}`));
-    })
-    return db.collection('likes').where('screamId', '==', screamId).get();
-  })
-  .then(data => {
-    data.forEach(doc => {
-      batch.delete(db.doc(`/likes/${doc.id}`));
-    })
-    return db.collection('notifications').where('screamId', '==', screamId).get();
-  })
-  .then(data => {
-    data.forEach(doc => {
-      batch.delete(db.doc(`/notifications/${doc.id}`));
-    })
-    return batch.commit();
-  })
-  .catch(err => console.error(err));
-})  
+  .onDelete((snapshot, context) => {
+    const screamId = context.params.screamId;
+    const batch = db.batch();
+    return db.collection('comments').where('screamId', '=', screamId).get()
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(db.doc(`/comments/${doc.id}`));
+        })
+        return db.collection('likes').where('screamId', '==', screamId).get();
+      })
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(db.doc(`/likes/${doc.id}`));
+        })
+        return db.collection('notifications').where('screamId', '==', screamId).get();
+      })
+      .then(data => {
+        data.forEach(doc => {
+          batch.delete(db.doc(`/notifications/${doc.id}`));
+        })
+        return batch.commit();
+      })
+      .catch(err => console.error(err));
+  })  
